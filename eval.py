@@ -2,6 +2,9 @@ import argparse
 import pandas as pd
 import numpy as np
 
+import warnings
+warnings.filterwarnings("ignore")
+
 from rdkit import RDLogger
 RDLogger.DisableLog('rdApp.*')
 

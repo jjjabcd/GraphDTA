@@ -6,6 +6,10 @@ import torch
 from torch_geometric.data import Data as GeomData
 from torch_geometric.data import DataLoader
 
+from tqdm import tqdm
+import warnings
+warnings.filterwarnings("ignore")
+
 # internal modules
 from src.create_data import smile_to_graph, protein_sequence_to_index
 from src.models.ginconv import GINConvNet

@@ -8,6 +8,10 @@ import torch.nn as nn
 from torch_geometric.data import Data as GeomData
 from torch_geometric.data import DataLoader
 
+from tqdm import tqdm
+import warnings
+warnings.filterwarnings("ignore")
+
 # project modules
 from src.metric import get_mse, get_rmse, get_pcc, get_cindex, get_rm2
 from src.create_data import smile_to_graph, protein_sequence_to_index
@@ -56,11 +60,13 @@ MODEL_FACTORY = {
 
 def build_smile_graph(smiles_list):
     unique_smiles = sorted(set(smiles_list))
-    smile_graph = {}
     print(f"[Info] Building smile_graph for {len(unique_smiles)} unique SMILES...")
-    for smi in unique_smiles:
+
+    smile_graph = {}
+    for smi in tqdm(unique_smiles, desc="Processing SMILES", ncols=100):
         c_size, features, edge_index = smile_to_graph(smi)
         smile_graph[smi] = (c_size, features, edge_index)
+
     return smile_graph
 
 
@@ -74,7 +80,7 @@ def build_dataset_from_csv(csv_path, task_name, smile_graph):
 
     dataset = []
 
-    for _, row in df.iterrows():
+    for _, row in tqdm(df.iterrows(), total=len(df), desc="Building dataset", ncols=100):
         smi = row["SMILES"]
         seq = row["FASTA"]
         y_val = float(row[label_col])
@@ -178,11 +184,16 @@ def main():
     set_seed(args.seed)
     device = get_device(args.cuda)
 
+    # =====================================
+    # Build dataloaders
+    # =====================================
     train_loader, val_loader = build_dataloaders(
         args.train_csv, args.val_csv, args.task_name, args.batch_size
     )
 
+    # =====================================
     # Build model
+    # =====================================
     ModelClass = MODEL_FACTORY[args.model_name]
     model = ModelClass().to(device)
 
@@ -195,7 +206,10 @@ def main():
 
     print(f"[Info] Training {args.model_name}")
 
-    for epoch in range(1, args.epochs + 1):
+    # tqdm progress bar
+    epoch_iter = tqdm(range(1, args.epochs + 1), desc="Training", ncols=100)
+
+    for epoch in epoch_iter:
         model.train()
         train_losses = []
 
@@ -209,13 +223,12 @@ def main():
             train_losses.append(loss.item())
 
         avg_train_loss = float(np.mean(train_losses))
-
         val_metrics = evaluate(model, val_loader, device)
 
-        print(
-            f"[Epoch {epoch:03d}] TrainLoss={avg_train_loss:.4f} | "
-            f"Val MSE={val_metrics['MSE']:.4f}, RMSE={val_metrics['RMSE']:.4f}"
-        )
+        epoch_iter.set_postfix({
+            "train_loss": avg_train_loss,
+            "val_mse": val_metrics["MSE"]
+        })
 
         history.append({
             "epoch": epoch,
