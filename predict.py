@@ -53,7 +53,7 @@ def build_smile_graph(smiles):
     table = {}
     print(f"[Info] Building SMILES graph for {len(unique)} unique SMILES...")
 
-    for smi in unique:
+    for smi in tqdm(unique, desc="Processing SMILES", ncols=100):
         c_size, features, edge_index = smile_to_graph(smi)
         table[smi] = (c_size, features, edge_index)
 
@@ -64,7 +64,9 @@ def build_test_dataset(csv_path, task_name, smile_graph):
     df = pd.read_csv(csv_path)
     data_list = []
 
-    for _, row in df.iterrows():
+    print(f"[Info] Converting CSV → PyG dataset ({len(df)})")
+
+    for _, row in tqdm(df.iterrows(), total=len(df), desc="Converting graphs", ncols=100):
         smi = row["SMILES"]
         seq = row["FASTA"]
 
@@ -92,10 +94,12 @@ def predict(model, loader, device):
     model.eval()
     preds = []
 
+    print("[Info] Running prediction...")
+
     with torch.no_grad():
-        for batch in loader:
+        for batch in tqdm(loader, desc="Predicting", ncols=100):
             batch = batch.to(device)
-            out = model(batch)                 # shape: [N,1]
+            out = model(batch)
             preds.append(out.view(-1).cpu())
 
     return torch.cat(preds).numpy()
@@ -118,16 +122,17 @@ def main():
 
     args = parser.parse_args()
 
+    # Device
     device = get_device(args.cuda)
 
-    # Load test set
+    # Load test CSV
     df_test = pd.read_csv(args.test_csv)
     smiles = list(df_test["SMILES"])
 
     # Build SMILES graph
     smile_graph = build_smile_graph(smiles)
 
-    # Convert test CSV → PyG dataset
+    # Convert CSV → dataset
     df_test, data_list = build_test_dataset(
         args.test_csv, args.task_name, smile_graph
     )
@@ -152,3 +157,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
