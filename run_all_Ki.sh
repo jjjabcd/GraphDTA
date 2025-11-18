@@ -10,9 +10,9 @@ for FOLD in 1 2 3
 do
   echo "--- FOLD ${FOLD} START ---"
 
-  bash scripts/Kd_train.sh ${FOLD} 0 &&
-  bash scripts/Kd_predict.sh ${FOLD} 0 &&
-  bash scripts/Kd_eval.sh ${FOLD}
+  bash scripts/Ki_train.sh ${FOLD} 1 &&
+  bash scripts/Ki_predict.sh ${FOLD} 1 &&
+  bash scripts/Ki_eval.sh ${FOLD}
 
   echo "--- FOLD ${FOLD} DONE ---"
 done

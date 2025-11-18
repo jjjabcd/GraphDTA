@@ -15,7 +15,7 @@ ROOT="/home/rlawlsgurjh/hdd/work/ChEMBL/data/processed/${TASK_NAME}/fold${FOLD}"
 TRAIN_CSV="${ROOT}/train.csv"
 VAL_CSV="${ROOT}/val.csv"
 
-OUT_DIR="./results_graph/${TASK_NAME}/${MODEL_NAME}/fold_${FOLD}"
+OUT_DIR="./results/${TASK_NAME}/${MODEL_NAME}/fold_${FOLD}"
 
 echo "=== Training ${TASK_NAME} Fold ${FOLD} with ${MODEL_NAME} on GPU ${GPU_ID} ==="
 
@@ -26,8 +26,8 @@ python train.py \
     --val_csv "${VAL_CSV}" \
     --out_dir "${OUT_DIR}" \
     --epochs 1000 \
-    --batch_size 256 \
-    --lr 0.0005 \
+    --batch_size 4096 \
+    --lr 0.0001 \
     --seed 42 \
     --patience 10 \
     --cuda "${GPU_ID}"
