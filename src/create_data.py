@@ -6,6 +6,10 @@ from torch.utils.data import Dataset
 from rdkit import Chem
 import networkx as nx
 
+from rdkit import RDLogger
+RDLogger.DisableLog('rdApp.*')
+
+
 ALLOWED_ATOMS = [
     'C', 'N', 'O', 'S', 'F', 'Si', 'P', 'Cl', 'Br', 'Mg', 'Na',
     'Ca', 'Fe', 'As', 'Al', 'I', 'B', 'V', 'K', 'Tl', 'Yb', 'Sb',

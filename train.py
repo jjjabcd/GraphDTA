@@ -17,6 +17,9 @@ from src.models.gcn import GCNNet
 from src.models.gat import GATNet
 from src.models.gat_gcn import GAT_GCN
 
+from rdkit import RDLogger
+RDLogger.DisableLog('rdApp.*')
+
 
 # ============================================================
 # utils

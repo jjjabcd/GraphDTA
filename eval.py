@@ -2,6 +2,10 @@ import argparse
 import pandas as pd
 import numpy as np
 
+from rdkit import RDLogger
+RDLogger.DisableLog('rdApp.*')
+
+
 from src.metric import (
     get_rmse,
     get_pcc,

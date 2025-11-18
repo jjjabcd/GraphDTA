@@ -23,7 +23,7 @@ def get_cindex(Y, P):
                     summ +=  1* (P[i] > P[j]) + 0.5 * (P[i] == P[j])
         
             
-    if pair is not 0:
+    if pair != 0:
         return summ/pair
     else:
         return 0
