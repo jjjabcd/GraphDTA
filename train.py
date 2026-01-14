@@ -74,7 +74,10 @@ def build_dataset_from_csv(csv_path, task_name, smile_graph):
     df = pd.read_csv(csv_path)
     print(f"[Info] Loading CSV: {csv_path} (n={len(df)})")
 
-    label_col = "pKd" if task_name == "Kd" else "pKi"
+    label_col = "pKd" if task_name == "Kd" else "pKi" if task_name == "Ki" else "Davis"
+    if task_name == "Davis":
+        label_col = "affinity"
+        
     if label_col not in df.columns:
         raise ValueError(f"Label column '{label_col}' not found.")
 
@@ -155,7 +158,7 @@ def evaluate(model, loader, device):
 # main training loop
 # ============================================================
 
-def main():
+def get_args():
     parser = argparse.ArgumentParser(description="Train GraphDTA from CSV (train + val only)")
     parser.add_argument("--task_name", required=True)
     parser.add_argument("--train_csv", required=True)
@@ -173,7 +176,11 @@ def main():
     parser.add_argument("--patience", type=int, default=50)
 
     args = parser.parse_args()
+    return args
 
+
+def main():
+    args = get_args()
     os.makedirs(args.out_dir, exist_ok=True)
 
     # Save config
@@ -206,29 +213,47 @@ def main():
 
     print(f"[Info] Training {args.model_name}")
 
-    # tqdm progress bar
-    epoch_iter = tqdm(range(1, args.epochs + 1), desc="Training", ncols=100)
+    for epoch in range(1, args.epochs + 1):
 
-    for epoch in epoch_iter:
+        # ---------------------------
+        # Training phase
+        # ---------------------------
         model.train()
         train_losses = []
 
-        for batch in train_loader:
+        batch_iter = tqdm(
+            train_loader,
+            desc=f"Epoch {epoch}/{args.epochs}",
+            ncols=100,
+            leave=True
+        )
+
+        for batch in batch_iter:
             batch = batch.to(device)
             optimizer.zero_grad()
+
             out = model(batch)
             loss = criterion(out.view(-1), batch.y.view(-1))
+
             loss.backward()
             optimizer.step()
+
             train_losses.append(loss.item())
+            batch_iter.set_postfix(loss=f"{loss.item():.4f}")
 
         avg_train_loss = float(np.mean(train_losses))
+
+        # ---------------------------
+        # Validation
+        # ---------------------------
         val_metrics = evaluate(model, val_loader, device)
 
-        epoch_iter.set_postfix({
-            "train_loss": avg_train_loss,
-            "val_mse": val_metrics["MSE"]
-        })
+        print(
+            f"[Epoch {epoch:03d}] "
+            f"Training Loss={avg_train_loss:.4f} | "
+            f"Val MSE={val_metrics['MSE']:.4f} | "
+            f"Val RMSE={val_metrics['RMSE']:.4f}"
+        )
 
         history.append({
             "epoch": epoch,
@@ -236,7 +261,9 @@ def main():
             **val_metrics
         })
 
-        # early stopping
+        # ---------------------------
+        # Early stopping
+        # ---------------------------
         if val_metrics["MSE"] < best_val_mse:
             best_val_mse = val_metrics["MSE"]
             patience_cnt = 0
@@ -252,13 +279,14 @@ def main():
             patience_cnt += 1
 
         if patience_cnt >= args.patience:
-            print(f"[Info] Early stopping at epoch {epoch}")
+            print(f"[Info] Early stopping triggered at epoch {epoch}")
             break
 
+    # =====================================
+    # Save history
+    # =====================================
     pd.DataFrame(history).to_csv(os.path.join(args.out_dir, "history.csv"), index=False)
-
     print("[Info] Training completed.")
-
 
 if __name__ == "__main__":
     main()

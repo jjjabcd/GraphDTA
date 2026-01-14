@@ -111,7 +111,7 @@ def predict(model, loader, device):
 
 def main():
     parser = argparse.ArgumentParser(description="GraphDTA Prediction")
-    parser.add_argument("--task_name", required=True)
+    parser.add_argument("--task_name", required=True, choices=["Kd", "Ki", "Davis"])
     parser.add_argument("--test_csv", required=True)
     parser.add_argument("--model_name", default="GINConvNet",
                         choices=list(MODEL_FACTORY.keys()))

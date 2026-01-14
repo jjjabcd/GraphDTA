@@ -20,7 +20,7 @@ from src.metric import (
 
 def main():
     parser = argparse.ArgumentParser(description="Evaluate GraphDTA results")
-    parser.add_argument("--task_name", required=True, choices=["Kd", "Ki"])
+    parser.add_argument("--task_name", required=True, choices=["Kd", "Ki", "Davis"])
     parser.add_argument("--pred_csv", required=True)
     parser.add_argument("--out_csv", required=True)
     args = parser.parse_args()
@@ -29,7 +29,9 @@ def main():
     df = pd.read_csv(args.pred_csv)
 
     # Target column
-    label_col = "pKd" if args.task_name == "Kd" else "pKi"
+    label_col = "pKd" if args.task_name == "Kd" else "pKi" if args.task_name == "Ki" else "Davis"
+    if args.task_name == "Davis":
+        label_col = "affinity"
 
     if label_col not in df.columns:
         raise ValueError(f"Label column '{label_col}' not found in {args.pred_csv}")
